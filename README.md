@@ -43,7 +43,7 @@ import { createHankoJwtStrategyOptions } from "@alien6/hankoshell-typescript-adk
 
 const config = loadHankoResourceServerConfig(process.env);
 const strategy = new Strategy(createHankoJwtStrategyOptions(config), (claims, done) => {
-  try { done(null, createHankoPrincipal(claims, config)); }
+  try { done(null, createHankoPrincipal(claims, config.issuer, config.audience)); }
   catch (error) { done(error); }
 });
 ```
@@ -52,7 +52,36 @@ Passport performs signature verification before the callback. Calling
 `createHankoPrincipal` by itself does not authenticate a token. Install the
 optional `passport-jwt` peer for this entry point.
 
-## Refresh, logout and organization
+## IAM and backend clients
+
+HankoShell owns identity and IAM policy across Alien6 products. Keycloak provides
+SSO and the registered client's login theme; applications use their own client ID
+and audience, with no theme or realm-policy override in the ADK.
+
+`HankoIamClient` extends `HankoOrganizationClient` with directory reads, position
+memberships, realm-role CRUD and direct user-role assignments. Both take the same
+`{ apiUrl, accessToken }` options. The callback supplies the caller's current
+short-lived token; Hanko authorizes each operation. The existing management API
+still requires realm administration for members and roles. Organization-scoped
+delegation must be implemented server-side before exposing these operations in a
+product. Never distribute realm-admin credentials to application clients.
+
+```ts
+const iam = new HankoIamClient({ apiUrl, accessToken: () => session.accessToken });
+const positions = await iam.listPositions(realm);
+const members = await iam.listMembers(realm, positionId);
+```
+
+`HankoTokenClient` supports server-side client credentials and explicit
+RFC 8693 exchanges (`subjectToken`, `audience`, `scopes`, optional `actorToken`).
+Pass a `clientSecret` callback in its options for rotating credentials. These are
+protocol helpers: agent delegation additionally requires issuer trust, bounded
+policy and end-to-end qualification of the Hanko facade and Keycloak extension.
+The facade currently forwards exchange inputs unchanged; do not assume it can
+exchange a Hanko re-signed subject token. Resource servers independently verify
+every returned access token. Tokens and secrets are never persisted by the ADK.
+
+## Refresh and logout
 
 `refreshHankoAccessToken` uses same-origin discovery and refuses HTTP failures.
 The caller must handle `HankoRefreshTokenError` by requiring authentication.
@@ -78,8 +107,9 @@ configured trusted publisher. Released versions are immutable.
 The [Go ADK](https://github.com/Alien6-Studio/hankoshell-golang-adk) is maintained
 separately. Both ADKs carry the same synthetic access-token vectors in `testdata/`.
 The portable manifest is [integration v1](contracts/integration-v1.schema.json).
-Applications retain their sessions and business authorization. IAM administration
-belongs to the [operator](https://github.com/Alien6-Studio/hankoshell-operator).
+Applications retain their sessions and business authorization. Hanko's API owns
+administration boundaries; the [operator](https://github.com/Alien6-Studio/hankoshell-operator)
+reconciles declarative IAM configuration.
 
 See [contribution](CONTRIBUTING.md) and [security reporting](SECURITY.md).
 
