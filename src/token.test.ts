@@ -35,7 +35,7 @@ test("backend and agent requests use exact discovery and freshly resolved secret
 });
 
 test("backend rejects invalid token responses and exchange token classes", async () => {
-  for (const invalid of [null, {}, { ...response, access_token: "" }, { ...response, token_type: "DPoP" }, { ...response, expires_in: 3601 }, { ...response, expires_in: 0 }, { ...response, expires_in: 1.5 }, { ...response, scope: [] }]) {
+  for (const invalid of [null, {}, { ...response, access_token: "" }, { ...response, token_type: "DPoP" }, { ...response, expires_in: 3601 }, { ...response, expires_in: 0 }, { ...response, expires_in: 1.5 }, { ...response, scope: [] }, { ...response, scope: null }]) {
     const client = new HankoTokenClient(config, { fetch: async (input) => Response.json(String(input).endsWith("/openid-configuration") ? { issuer, token_endpoint: `${issuer}/token` } : invalid) });
     await assert.rejects(client.clientCredentials(), /Invalid Hanko access-token response/);
   }
