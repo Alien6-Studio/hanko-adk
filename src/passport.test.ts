@@ -101,3 +101,33 @@ test("rejects malformed payloads before discovery and recovers after discovery f
   for (let i = 0; i < 2; i += 1) assert.ok(await result(`a.${payload}.c`) instanceof Error);
   assert.equal(calls, 2);
 });
+
+test("JWKS downloads honor the configured fetch, response limit and full-request deadline", async (t) => {
+  const issuer = "https://auth.example.test";
+  const now = Math.floor(Date.now() / 1000);
+  const encode = (value: unknown) => Buffer.from(JSON.stringify(value)).toString("base64url");
+  const token = `${encode({ alg: "RS256", kid: "fixture" })}.${encode({ sub: "fixture", hanko_token_use: "access", iat: now, exp: now + 60 })}.c2ln`;
+  for (const scenario of ["oversize", "stalled", "redirect"] as const) {
+    await t.test(scenario, async () => {
+      const calls: string[] = [];
+      const provider = createHankoJwksSecretProvider(issuer, {
+        timeoutMs: 50,
+        maxResponseBytes: 512,
+        fetch: async (input, init) => {
+          calls.push(String(input));
+          assert.equal(init?.redirect, "error");
+          if (String(input).endsWith("openid-configuration")) {
+            return Response.json({ issuer, jwks_uri: `${issuer}/jwks` });
+          }
+          if (scenario === "stalled") return new Promise<Response>(() => {});
+          if (scenario === "redirect") return new Response(null, { status: 302, headers: { Location: "https://other.example.test/jwks" } });
+          return Response.json({ keys: [], padding: "x".repeat(1024) });
+        },
+      });
+      const error = await new Promise<unknown>((resolve) => provider({}, token, (failure) => resolve(failure)));
+      assert.ok(error instanceof Error);
+      assert.match(error.message, scenario === "oversize" ? /byte limit/ : scenario === "stalled" ? /aborted/ : /status 302/);
+      assert.deepEqual(calls, [`${issuer}/.well-known/openid-configuration`, `${issuer}/jwks`]);
+    });
+  }
+});

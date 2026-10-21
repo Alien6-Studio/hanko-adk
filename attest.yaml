@@ -1,0 +1,32 @@
+version: "0.1"
+name: hankoshell-typescript-adk-qualification
+steps:
+  qualify:
+    run: |-
+      set -eu
+      npm ci --ignore-scripts
+      npm run lint
+      npm run test:coverage
+      npm run build
+      npm audit --audit-level=high
+      npm pack --pack-destination artifacts
+      node --version > artifacts/toolchain.txt
+    inputs:
+      - src/
+      - testdata/
+      - contracts/
+      - package.json
+      - package-lock.json
+      - tsconfig.json
+      - tsconfig.build.json
+      - README.md
+      - LICENSE
+      - CONTRIBUTING.md
+      - SECURITY.md
+      - .github/
+      - attest.yaml
+      - artifacts/source-revision.txt
+    outputs:
+      - artifacts/
+    attestation:
+      type: tested-package
