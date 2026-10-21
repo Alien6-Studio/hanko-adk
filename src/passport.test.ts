@@ -23,7 +23,7 @@ test("creates fail-closed Passport options for a Hanko resource server", () => {
 
 test("enforces the shared access-token contract through real Passport verification", async (t) => {
   const contract = JSON.parse(await readFile(
-    new URL("../../go/testdata/access-token-contract.json", import.meta.url), "utf8",
+    new URL("../testdata/access-token-contract.json", import.meta.url), "utf8",
   )) as {
     now: number;
     base: Record<string, unknown>;
