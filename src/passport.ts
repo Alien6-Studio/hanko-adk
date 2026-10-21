@@ -8,6 +8,7 @@ import {
 } from "./config.js";
 import { HankoDiscovery, type HankoDiscoveryOptions } from "./discovery.js";
 import { checkAccessTokenPayload } from "./access-token.js";
+import { requestHankoJson } from "./http.js";
 
 export interface HankoJwksOptions extends HankoDiscoveryOptions {
   readonly cache?: boolean;
@@ -32,6 +33,9 @@ export function createHankoJwksSecretProvider(
             rateLimit: options.rateLimit ?? true,
             jwksRequestsPerMinute: options.jwksRequestsPerMinute ?? 5,
             jwksUri: discovery.endpoint(metadata, "jwks_uri"),
+            fetcher: (uri) => requestHankoJson<{ keys: unknown[] }>(uri, {
+              headers: { Accept: "application/json" },
+            }, options),
           }),
         )
         .catch((error: unknown) => {

@@ -4,3 +4,7 @@ node_modules/
 *.tgz
 .env*
 !.env.example
+
+/.attest/
+/artifacts/
+.attest/keys/
