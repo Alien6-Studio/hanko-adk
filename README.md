@@ -62,9 +62,20 @@ and audience, with no theme or realm-policy override in the ADK.
 memberships, realm-role CRUD and direct user-role assignments. Both take the same
 `{ apiUrl, accessToken }` options. The callback supplies the caller's current
 short-lived token; Hanko authorizes each operation. The existing management API
-still requires realm administration for members and roles. Organization-scoped
-delegation must be implemented server-side before exposing these operations in a
-product. Never distribute realm-admin credentials to application clients.
+still requires realm administration for its members and roles. Product backends
+use `HankoDelegatedOrganizationClient` with a dedicated organization credential,
+resolved through the same `accessToken` callback. Bind `realm`, `applicationId`
+and `rootPositionId` at construction. It lists approved positions and changes
+membership only for existing root members; the API verifies current group and
+role boundaries before writes. Operator-owned structure and root admission remain
+separate. Never distribute realm-admin credentials to application clients.
+
+`createOrganizationDelegation`, `listOrganizationDelegations` and
+`revokeOrganizationDelegation` on `HankoIamClient` manage these credentials.
+Issuance requires an administrator session, an explicit role allowlist and an
+expiry of 5 minutes to 24 hours. Keep the returned secret server-side; it cannot
+call ordinary realm-administration endpoints. This requires the matching platform
+API; it does not enable interactive active-node selection or agent delegation.
 
 ```ts
 const iam = new HankoIamClient({ apiUrl, accessToken: () => session.accessToken });

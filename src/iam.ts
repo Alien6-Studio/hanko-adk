@@ -1,4 +1,5 @@
 import { HankoOrganizationClient, pathSegment, realmPath } from "./organization.js";
+import type { HankoOrganizationDelegation, HankoOrganizationDelegationSpec, HankoOrganizationDelegationMetadata } from "./organization-administration.js";
 
 export interface HankoUser {
   readonly id: string;
@@ -32,6 +33,20 @@ export type HankoRolePatch = Omit<Partial<HankoRoleSpec>, "name">;
  * to an application as a substitute for organization-scoped delegation.
  */
 export class HankoIamClient extends HankoOrganizationClient {
+  /** Requires an administrator session; the returned credential stays server-side. */
+  createOrganizationDelegation(realm: string, spec: HankoOrganizationDelegationSpec): Promise<HankoOrganizationDelegation> {
+    return this.request("POST", `${realmPath(realm)}/org/delegations`, spec, [201]);
+  }
+
+  async listOrganizationDelegations(realm: string): Promise<HankoOrganizationDelegationMetadata[]> {
+    const response = await this.request<{ delegations: HankoOrganizationDelegationMetadata[] }>("GET", `${realmPath(realm)}/org/delegations`);
+    return list(response.delegations);
+  }
+
+  async revokeOrganizationDelegation(realm: string, id: string): Promise<void> {
+    await this.request("DELETE", `${realmPath(realm)}/org/delegations/${pathSegment(id)}`, undefined, [204]);
+  }
+
   async listUsers(realm: string): Promise<HankoUser[]> {
     const response = await this.request<{ users: HankoUser[] }>("GET", `${realmPath(realm)}/users`);
     return list(response.users);
