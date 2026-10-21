@@ -1,0 +1,13 @@
+{
+  "name": "hanko-adk-workspace",
+  "private": true,
+  "workspaces": [
+    "typescript"
+  ],
+  "scripts": {
+    "check": "npm run lint --workspace=@alien6/hanko-adk && npm run test --workspace=@alien6/hanko-adk && npm run build --workspace=@alien6/hanko-adk && npm pack --dry-run --workspace=@alien6/hanko-adk"
+  },
+  "engines": {
+    "node": ">=22 <25"
+  }
+}

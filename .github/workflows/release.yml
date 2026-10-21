@@ -1,0 +1,48 @@
+name: Release
+on:
+  push:
+    tags: ['go/v*', 'typescript/v*']
+permissions:
+  contents: read
+jobs:
+  quality:
+    uses: ./.github/workflows/ci.yml
+  publish:
+    needs: quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: release
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Validate the exact package tag and main ancestry
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          [[ "$RELEASE_TAG" =~ ^(go|typescript)/v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          git merge-base --is-ancestor HEAD origin/main
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        if: startsWith(github.ref_name, 'typescript/')
+        with:
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+      - name: Publish TypeScript using the configured npm trusted publisher
+        if: startsWith(github.ref_name, 'typescript/')
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          npm install --global npm@12.2.0 --ignore-scripts
+          test "$RELEASE_TAG" = "typescript/v$(node -p 'require("./typescript/package.json").version')"
+          npm ci --ignore-scripts
+          npm run build --workspace=@alien6/hanko-adk
+          npm publish --workspace=@alien6/hanko-adk --access public --provenance
+      - name: Create the package release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: gh release create "$RELEASE_TAG" --verify-tag --title "$RELEASE_TAG" --generate-notes

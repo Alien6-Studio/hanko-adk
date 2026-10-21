@@ -1,0 +1,68 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+permissions:
+  contents: read
+concurrency:
+  group: adk-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  typescript:
+    name: TypeScript Node ${{ matrix.node }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['22', '24']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run check
+      - run: npm audit --omit=dev --audit-level=high
+      - name: Install and import the actual npm archive
+        run: |
+          archive="$(npm pack --workspace=@alien6/hanko-adk --pack-destination "$RUNNER_TEMP" --json | node -e 'let input=""; process.stdin.on("data", chunk => input += chunk); process.stdin.on("end", () => process.stdout.write(JSON.parse(input)[0].filename));')"
+          npm install --prefix "$RUNNER_TEMP/consumer" --ignore-scripts --no-audit "$RUNNER_TEMP/$archive"
+          printf '%s\n' 'import { normalizeHankoIssuer } from "@alien6/hanko-adk";' 'if (normalizeHankoIssuer("https://auth.example.test/") !== "https://auth.example.test") throw new Error("packaged import failed");' > "$RUNNER_TEMP/consumer/check.mjs"
+          node "$RUNNER_TEMP/consumer/check.mjs"
+  go:
+    name: Go
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: go
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go/go.mod
+          cache-dependency-path: go/go.sum
+      - run: test -z "$(gofmt -l .)"
+      - run: go vet ./...
+      - run: go test -race -count=1 ./...
+      - run: go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
+  checks:
+    name: ADK checks
+    if: always()
+    needs: [typescript, go]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - env:
+          TYPESCRIPT_RESULT: ${{ needs.typescript.result }}
+          GO_RESULT: ${{ needs.go.result }}
+        run: test "$TYPESCRIPT_RESULT" = success && test "$GO_RESULT" = success
