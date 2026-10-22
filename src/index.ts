@@ -37,4 +37,9 @@ export { HankoTokenClient } from "./token.js";
 export type { HankoTokenSet, HankoTokenClientOptions, HankoTokenExchange } from "./token.js";
 
 export { createHankoLogoutUrl, getHankoLogoutToken } from "./logout.js";
+export { hankoAccountAction } from "./account.js";
 export type { HankoLogoutRequest } from "./logout.js";
+
+export { resolveHankoApplicationAccess } from "./access.js";
+export type { HankoApplicationAccess } from "./access.js";
+export { createHankoAccessTokenVerifier } from "./verify.js";

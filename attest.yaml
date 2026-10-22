@@ -4,7 +4,7 @@ steps:
   qualify:
     run: |-
       set -eu
-      npm ci --ignore-scripts
+      npm ci
       npm run lint
       npm run test:coverage
       npm run build
