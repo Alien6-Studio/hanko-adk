@@ -5,6 +5,7 @@ import {
   useTheme,
   type ExperienceContext,
 } from "@alien6/hankoshell-keycloak-theme-builder/experience/react";
+import { ThemeProvider } from "@alien6/hankoshell-keycloak-theme-builder/react";
 import type {
   ThemeConfig,
   ColorMode,
@@ -27,6 +28,10 @@ export interface HankoIdentityPortalProps {
   mode?: ColorMode;
   page?: "profile" | "organizations" | "access" | "security";
   onAccountAction?: (action: HankoAccountAction) => void | Promise<void>;
+}
+/** A host-routed screen. No navigation, branding frame, CSS or theme variables are injected. */
+export interface HankoIdentityPageProps extends HankoIdentityPortalProps {
+  page: NonNullable<HankoIdentityPortalProps["page"]>;
 }
 const words = {
   en: {
@@ -102,6 +107,9 @@ interface PortalContext extends ExperienceContext {
 export function HankoIdentityPortal(props: Readonly<HankoIdentityPortalProps>) {
   return <IdentityPortal key={props.subject} {...props} />;
 }
+export function HankoIdentityPage(props: Readonly<HankoIdentityPageProps>) {
+  return <IdentityPortal key={props.subject} {...props} presentation="page" />;
+}
 function IdentityPortal({
   subject,
   controller,
@@ -110,7 +118,8 @@ function IdentityPortal({
   mode,
   page,
   onAccountAction,
-}: Readonly<HankoIdentityPortalProps>) {
+  presentation = "portal",
+}: Readonly<HankoIdentityPortalProps & { presentation?: "portal" | "page" }>) {
   const [activePage, setActivePage] = useState(page);
   useEffect(() => setActivePage(page), [page]);
   const [hostMode, setHostMode] = useState<ColorMode>("light");
@@ -189,6 +198,19 @@ function IdentityPortal({
     (module) =>
       module.id !== "organizations" || account.organizationsAvailable !== false,
   );
+  const context: PortalContext = {
+    subject, locale, capabilities: [], account, controller,
+    ...(onAccountAction ? { action: onAccountAction } : {}),
+    reload: () => setRevision((value) => value + 1),
+  };
+  if (presentation === "page") {
+    const current = availableModules.find(module => module.id === page);
+    return <ThemeProvider config={theme} mode={mode ?? hostMode}>
+      <div className="hanko-account-page">{current
+        ? <current.Component context={context} />
+        : <p role="status">{words[locale].unavailable}</p>}</div>
+    </ThemeProvider>;
+  }
   return (
     <div className="hk-account">
       <style>{`.hk-account .hk-row{flex-wrap:wrap;justify-content:flex-start;row-gap:.75rem}.hk-account .hk-container{min-width:0}.hk-account .hk-card{overflow-wrap:anywhere}.hk-account nav{padding-bottom:1rem;margin-bottom:1rem;border-bottom:1px solid var(--border)}.hk-account nav .hk-link{border:0;background:transparent;padding:.5rem .75rem;border-radius:var(--control-radius);color:var(--fg-muted);font:inherit;font-size:.875rem;cursor:pointer}.hk-account nav .hk-link[aria-current=page]{color:var(--primary);background:color-mix(in srgb,var(--primary) 12%,transparent);font-weight:600}.hk-account dl{margin-block:1rem}.hk-account dd{margin:0 0 1rem}.hk-account h2{font-size:1rem;margin-block:1.5rem .75rem}`}</style>
@@ -211,15 +233,7 @@ function IdentityPortal({
           })),
         }}
         modules={availableModules}
-        context={{
-          subject,
-          locale,
-          capabilities: [],
-          account,
-          controller,
-          ...(onAccountAction ? { action: onAccountAction } : {}),
-          reload: () => setRevision((value) => value + 1),
-        }}
+        context={context}
       />
     </div>
   );
