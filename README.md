@@ -1,5 +1,7 @@
 # HankoShell TypeScript ADK
 
+Use `hankoAccountAction("profile")` as extra parameters of your OIDC client's normal sign-in flow to edit personal information. Keycloak enforces editable fields, federation restrictions and verification; the OIDC client retains state, nonce, PKCE and callback handling. The helper also supports `password`, `email` and `otp` without administrator credentials.
+
 Application-side Hanko adapters for Node 22 and 24. The first public version of
 `@alien6/hankoshell-typescript-adk` is being prepared; no npm release is claimed yet.
 
