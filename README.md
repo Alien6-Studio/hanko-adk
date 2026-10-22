@@ -58,6 +58,12 @@ The optional `/react` entry provides `HankoIdentityPortal`: profile, organizatio
 members, roles, access and security, styled with your Keycloak Theme Builder theme.
 Install React and `@alien6/hankoshell-keycloak-theme-builder` alongside the ADK.
 
+For native application routes, use `HankoIdentityPage` with a required `page`
+(`profile`, `organizations`, `access` or `security`). The application owns its
+router, navigation and styling; this component injects no CSS, theme variables
+or branded frame. Its semantic markup and `hk-*` classes can be styled inside
+the application's CSS module. Live page titles and descriptions still work.
+
 ```tsx
 "use client";
 import { HankoIdentityPortal, type HankoIdentityPortalProps } from "@alien6/hankoshell-typescript-adk/react";
