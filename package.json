@@ -1,6 +1,6 @@
 {
   "name": "@alien6/hankoshell-typescript-adk",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Reusable Hanko IAM runtime adapters for product applications",
   "type": "module",
   "sideEffects": false,
@@ -28,7 +28,19 @@
       "types": "./dist/passport.d.ts",
       "import": "./dist/passport.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js"
+    },
+    "./identity": {
+      "types": "./dist/identity.d.ts",
+      "import": "./dist/identity.js"
+    },
+    "./identity/server": {
+      "types": "./dist/identity-server.d.ts",
+      "import": "./dist/identity-server.js"
+    }
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -38,17 +50,30 @@
     "check": "npm run lint && npm test && npm run build && npm pack --dry-run"
   },
   "dependencies": {
-    "jwks-rsa": "^3.2.0"
+    "jwks-rsa": "^3.2.0",
+    "jose": "^6.2.1"
   },
   "peerDependencies": {
     "next-auth": ">=5.0.0-beta.25 <6",
-    "passport-jwt": "^4.0.1"
+    "passport-jwt": "^4.0.1",
+    "react": "^18.3.1 || ^19.0.0",
+    "react-dom": "^18.3.1 || ^19.0.0",
+    "@alien6/hankoshell-keycloak-theme-builder": ">=0.1.0 <1"
   },
   "peerDependenciesMeta": {
     "next-auth": {
       "optional": true
     },
     "passport-jwt": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "@alien6/hankoshell-keycloak-theme-builder": {
       "optional": true
     }
   },
@@ -59,7 +84,12 @@
     "next-auth": "^5.0.0-beta.32",
     "passport-jwt": "^4.0.1",
     "tsx": "^4.23.12",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "@alien6/hankoshell-keycloak-theme-builder": "git+https://github.com/Alien6-Studio/hankoshell-keycloak-theme-builder.git#bab8ce554bcf1fa5c7c7580e9d75773fa957e003",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0"
   },
   "publishConfig": {
     "access": "public"
@@ -68,5 +98,7 @@
   "homepage": "https://github.com/Alien6-Studio/hankoshell-typescript-adk",
   "bugs": {
     "url": "https://github.com/Alien6-Studio/hankoshell-typescript-adk/issues"
-  }
+  },
+  "types": "./dist/index.d.ts",
+  "main": "./dist/index.js"
 }

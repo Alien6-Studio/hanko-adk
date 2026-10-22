@@ -1,9 +1,7 @@
 # HankoShell TypeScript ADK
 
-Use `hankoAccountAction("profile")` as extra parameters of your OIDC client's normal sign-in flow to edit personal information. Keycloak enforces editable fields, federation restrictions and verification; the OIDC client retains state, nonce, PKCE and callback handling. The helper also supports `password`, `email` and `otp` without administrator credentials.
-
-Application-side Hanko adapters for Node 22 and 24. The first public version of
-`@alien6/hankoshell-typescript-adk` is being prepared; no npm release is claimed yet.
+Application authentication, backend adapters and reusable account screens for HankoShell.
+Use Node 22 or 24. The first npm release is being prepared.
 
 [![CI](https://github.com/Alien6-Studio/hankoshell-typescript-adk/actions/workflows/ci.yml/badge.svg)](https://github.com/Alien6-Studio/hankoshell-typescript-adk/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
@@ -53,6 +51,53 @@ const strategy = new Strategy(createHankoJwtStrategyOptions(config), (claims, do
 Passport performs signature verification before the callback. Calling
 `createHankoPrincipal` by itself does not authenticate a token. Install the
 optional `passport-jwt` peer for this entry point.
+
+## React account screens
+
+The optional `/react` entry provides `HankoIdentityPortal`: profile, organizations,
+members, roles, access and security, styled with your Keycloak Theme Builder theme.
+Install React and `@alien6/hankoshell-keycloak-theme-builder` alongside the ADK.
+
+```tsx
+"use client";
+import { HankoIdentityPortal, type HankoIdentityPortalProps } from "@alien6/hankoshell-typescript-adk/react";
+import { createHankoIdentityClient } from "@alien6/hankoshell-typescript-adk/identity";
+
+const controller = createHankoIdentityClient({ endpoint: "/api/account" });
+
+export function Account(props: Omit<HankoIdentityPortalProps, "controller">) {
+  return <HankoIdentityPortal {...props} controller={controller} locale="fr" />;
+}
+```
+
+`createHankoIdentityHandler` from `/identity/server` exposes this same-origin
+endpoint. Its `authorize(request)` callback must verify the current session and
+return `{ subject, controller }`. Implement that controller against your existing
+server-authorized APIs; `createHankoIdentityBackend` supplies bounded authenticated
+transport. Set `origin` to the configured public application origin behind a proxy.
+Every request rechecks identity, organization membership and allowed operations;
+backend authorization remains mandatory. No browser administrator token is needed.
+Unsupported operations stay hidden. Business organization data stays in the application.
+
+For `profile`, `password`, `email` and `otp`, pass `hankoAccountAction(action)` to
+your OIDC client's normal sign-in flow (Auth.js third argument). The host retains
+state, nonce, PKCE and callback handling; Keycloak enforces editable fields and
+federation restrictions. Wire `logout` to your application's normal sign-out.
+The Theme Builder's `theme.runtime` supports live appearance updates through
+`createHankoAppearanceProxy`, using a fixed public upstream and no session credentials.
+Customize page titles and descriptions with `theme.modules["account.profile"]`
+(and `account.organizations`, `account.access`, `account.security`); each accepts
+`title` and `description` strings or `{ en, fr }` translations.
+
+## Application authorization
+
+For a backend without Passport, `createHankoAccessTokenVerifier({ issuer, audience })`
+returns a verifier with bounded discovery, cached JWKS and the shared access-token
+checks. After verifying the token, call `resolveHankoApplicationAccess(principal, audience)`
+to resolve application roles and the active organization. A present organization
+claim must select exactly one organization: ambiguous or malformed claims grant no
+roles, and top-level roles from other organizations cannot fill the gap. Product
+APIs keep checking ownership of their business resources; Hanko supplies IAM authority.
 
 ## IAM and backend clients
 
