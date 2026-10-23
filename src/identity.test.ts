@@ -514,3 +514,11 @@ test("protected organization members cannot be changed by the identity BFF", asy
  }
  assert.equal(calls.some(call=>call[0]==="role"||call[0]==="remove"),false);
 });
+
+test("identity transports honor the host's operation deadline", async () => {
+ const slow = async () => { await new Promise(resolve => setTimeout(resolve, 30)); return Response.json(account); };
+ const controller = createHankoIdentityClient({endpoint:"/api/identity",timeoutMs:5,fetch:slow});
+ await assert.rejects(controller.account(new AbortController().signal), /aborted/);
+ const backend = createHankoIdentityBackend({baseUrl:"https://api.example.test",accessToken:()=>"user",timeoutMs:5,fetch:slow});
+ await assert.rejects(backend("/account",new AbortController().signal), /aborted/);
+});

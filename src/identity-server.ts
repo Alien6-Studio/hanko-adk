@@ -302,6 +302,7 @@ export function createHankoIdentityBackend(options: {
   baseUrl: string;
   accessToken: () => string | Promise<string>;
   fetch?: HankoFetch;
+  timeoutMs?: number;
 }) {
   const base = new URL(options.baseUrl);
   if (
@@ -335,6 +336,7 @@ export function createHankoIdentityBackend(options: {
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       },
       {
+        ...(options.timeoutMs !== undefined ? { timeoutMs: options.timeoutMs } : {}),
         fetch: async (url, init) => {
           const response = await (options.fetch ?? globalThis.fetch)(url, init);
           if (!response.ok) {

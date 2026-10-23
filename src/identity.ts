@@ -87,6 +87,7 @@ export interface HankoIdentityController {
 export function createHankoIdentityClient(options: {
   endpoint: string;
   fetch?: HankoFetch;
+  timeoutMs?: number;
 }): HankoIdentityController {
   if (!/^\/(?!\/)[^\s\\?#]*$/u.test(options.endpoint))
     throw new Error("Identity endpoint must be a same-origin path");
