@@ -233,3 +233,8 @@ attest verify proof/receipt.yaml --recompute --require signature,recompute,succe
 
 The receipt establishes the recorded checks and package identity. It does not
 claim a hermetic build or an independently trusted timestamp.
+
+`HankoApplicationOrganizationClient` manages product members and invitations with
+the current user's access token. Hanko approves the application, organization
+and client-role groups in its deployment policy. Invitation acceptance requires
+the recipient's verified SSO email; applications keep their own routes and UI.

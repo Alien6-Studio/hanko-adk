@@ -1,6 +1,6 @@
 {
   "name": "@alien6/hankoshell-typescript-adk",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Reusable Hanko IAM runtime adapters for product applications",
   "type": "module",
   "sideEffects": false,

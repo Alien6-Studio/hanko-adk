@@ -43,3 +43,8 @@ export type { HankoLogoutRequest } from "./logout.js";
 export { resolveHankoApplicationAccess } from "./access.js";
 export type { HankoApplicationAccess } from "./access.js";
 export { createHankoAccessTokenVerifier } from "./verify.js";
+
+export { HankoApplicationOrganizationClient } from "./application-organization.js";
+export type { HankoApplicationMembership, HankoApplicationMembers, HankoApplicationInvitation, HankoApplicationOrganizationOptions } from "./application-organization.js";
+
+export { HankoHttpError } from "./http.js";

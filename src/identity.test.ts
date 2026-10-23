@@ -505,3 +505,20 @@ test("organization field capabilities constrain both UI metadata and server writ
     403,
   );
 });
+
+test("protected organization members cannot be changed by the identity BFF", async () => {
+ const {send,calls}=setup({organization:async()=>({...details,members:details.members.map(member=>({...member,manageable:false}))})});
+ for (const action of ["changeMemberRole","removeMember"]) {
+  const input={action,organization:"one",member:"bob",...(action==="changeMemberRole"?{role:"member"}:{})};
+  assert.equal((await send(input)).status,403);
+ }
+ assert.equal(calls.some(call=>call[0]==="role"||call[0]==="remove"),false);
+});
+
+test("identity transports honor the host's operation deadline", async () => {
+ const slow = async () => { await new Promise(resolve => setTimeout(resolve, 30)); return Response.json(account); };
+ const controller = createHankoIdentityClient({endpoint:"/api/identity",timeoutMs:5,fetch:slow});
+ await assert.rejects(controller.account(new AbortController().signal), /aborted/);
+ const backend = createHankoIdentityBackend({baseUrl:"https://api.example.test",accessToken:()=>"user",timeoutMs:5,fetch:slow});
+ await assert.rejects(backend("/account",new AbortController().signal), /aborted/);
+});

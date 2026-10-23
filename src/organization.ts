@@ -86,11 +86,12 @@ export class HankoOrganizationClient {
     await this.request("DELETE", `${positionPath(realm, positionId)}/members/${pathSegment(userId)}`, undefined, [204]);
   }
 
-  protected async request<T>(method: string, path: string, body?: unknown, expected = [200]): Promise<T> {
+  protected async request<T>(method: string, path: string, body?: unknown, expected = [200], signal?: AbortSignal): Promise<T> {
     const token = (await this.#accessToken()).trim();
     if (!token) throw new Error("Hanko organization access token is empty");
     return requestHankoJson<T>(`${this.#apiUrl}${path}`, {
       method,
+      ...(signal ? { signal } : {}),
       redirect: "error",
       headers: {
         Accept: "application/json",
