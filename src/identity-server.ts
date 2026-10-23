@@ -162,6 +162,7 @@ export function createHankoIdentityHandler(options: {
             identifier(input.member);
             if (!details.members.some((member) => member.id === input.member))
               throw new HankoIdentityError(404);
+            if (details.members.find((member) => member.id === input.member)?.manageable === false) throw new HankoIdentityError(403);
             if (input.action === "removeMember") {
               if (!controller.removeMember) throw new HankoIdentityError(403);
               await controller.removeMember(id, input.member, request.signal);

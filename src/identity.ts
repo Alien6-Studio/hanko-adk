@@ -34,6 +34,7 @@ export interface HankoOrganizationDetails {
     name: string;
     email?: string;
     role: string;
+    manageable?: boolean;
   }[];
   roles: readonly { id: string; name: string }[];
   membersAvailable?: boolean;

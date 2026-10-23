@@ -505,3 +505,12 @@ test("organization field capabilities constrain both UI metadata and server writ
     403,
   );
 });
+
+test("protected organization members cannot be changed by the identity BFF", async () => {
+ const {send,calls}=setup({organization:async()=>({...details,members:details.members.map(member=>({...member,manageable:false}))})});
+ for (const action of ["changeMemberRole","removeMember"]) {
+  const input={action,organization:"one",member:"bob",...(action==="changeMemberRole"?{role:"member"}:{})};
+  assert.equal((await send(input)).status,403);
+ }
+ assert.equal(calls.some(call=>call[0]==="role"||call[0]==="remove"),false);
+});

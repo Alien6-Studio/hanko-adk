@@ -1,3 +1,8 @@
+/** HTTP status only; provider response bodies never become application errors. */
+export class HankoHttpError extends Error {
+  constructor(readonly status: number) { super(`Hanko HTTP request returned status ${status}`); }
+}
+
 export type HankoFetch = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
 
 export interface HankoHttpOptions {
@@ -33,7 +38,7 @@ export async function requestHankoJson<T>(
       signal.throwIfAborted();
       if (response.redirected || !expected.includes(response.status)) {
         void response.body?.cancel().catch(() => undefined);
-        throw new Error(`Hanko HTTP request returned status ${response.status}`);
+        throw new HankoHttpError(response.status);
       }
       if (response.status === 204 || response.status === 404) {
         void response.body?.cancel().catch(() => undefined);

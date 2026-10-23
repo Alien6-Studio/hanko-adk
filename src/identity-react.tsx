@@ -545,7 +545,7 @@ function Organization(props: HankoIdentityViewProps & { id: string }) {
                 ? {
                     renderActions: (
                       member: HankoOrganizationDetails["members"][number],
-                    ) => (
+                    ) => member.manageable === false ? null : (
                       <MemberActions
                         {...props}
                         details={details}
