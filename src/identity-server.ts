@@ -104,7 +104,24 @@ export function createHankoIdentityHandler(options: {
             if (!data.name.trim()) throw new HankoIdentityError(400);
             for (const field of ["description", "website", "email"])
               if (data[field] !== undefined)
-                bounded(data[field], field === "description" ? 2000 : 320);
+                bounded(
+                  data[field],
+                  field === "description" ? 2000 : 320,
+                  field === "description",
+                );
+            if (
+              details.editableFields &&
+              Object.keys(data).some(
+                (field) =>
+                  !(
+                    field === "name" && data.name === details.organization.name
+                  ) &&
+                  !details.editableFields!.includes(
+                    field as "name" | "description" | "website" | "email",
+                  ),
+              )
+            )
+              throw new HankoIdentityError(403);
             await controller.updateOrganization(
               id,
               data as unknown as { name: string },
@@ -225,9 +242,13 @@ async function body(request: Request): Promise<Record<string, unknown>> {
 }
 
 // Invalid caller input is a 400; malformed backend context remains a 502.
-function bounded(value: unknown, limit: number): asserts value is string {
+function bounded(
+  value: unknown,
+  limit: number,
+  multiline = false,
+): asserts value is string {
   try {
-    validateField(value, limit);
+    validateField(value, limit, multiline);
   } catch {
     throw new HankoIdentityError(400);
   }
