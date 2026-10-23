@@ -449,3 +449,59 @@ test("server transport rotates credentials and preserves safe backend denials", 
     );
   }
 });
+
+test("organization field capabilities constrain both UI metadata and server writes", async () => {
+  for (const editableFields of [["unknown"], ["name", "name"], null, "name"]) {
+    assert.throws(() =>
+      validateHankoOrganization(
+        { ...details, editableFields } as unknown as HankoOrganizationDetails,
+        "one",
+      ),
+    );
+  }
+  const { send, calls } = setup({
+    organization: async () => ({
+      ...details,
+      editableFields: ["name", "description"],
+    }),
+  });
+  assert.equal(
+    (
+      await send({
+        action: "updateOrganization",
+        organization: "one",
+        input: { name: "One", website: "https://example.test" },
+      })
+    ).status,
+    403,
+  );
+  assert.equal(calls.length, 0);
+  assert.equal(
+    (
+      await send({
+        action: "updateOrganization",
+        organization: "one",
+        input: { name: "New name", description: "First line\nSecond line" },
+      })
+    ).status,
+    204,
+  );
+  assert.deepEqual(calls.at(-1), [
+    "update",
+    "one",
+    { name: "New name", description: "First line\nSecond line" },
+  ]);
+  const fixedName = setup({
+    organization: async () => ({ ...details, editableFields: ["description"] }),
+  });
+  assert.equal(
+    (
+      await fixedName.send({
+        action: "updateOrganization",
+        organization: "one",
+        input: { name: "Renamed", description: "Changed" },
+      })
+    ).status,
+    403,
+  );
+});

@@ -21,6 +21,8 @@ export interface HankoOrganizationSummary {
   slug?: string;
   role?: string;
 }
+export type HankoOrganizationField =
+  "name" | "description" | "website" | "email";
 export interface HankoOrganizationDetails {
   organization: HankoOrganizationSummary & {
     description?: string;
@@ -35,6 +37,8 @@ export interface HankoOrganizationDetails {
   }[];
   roles: readonly { id: string; name: string }[];
   membersAvailable?: boolean;
+  /** Omit fields which the application does not support. Defaults to all four fields. */
+  editableFields?: readonly HankoOrganizationField[];
   permissions: { edit: boolean; invite: boolean; manageMembers: boolean };
 }
 export interface HankoOrganizationChanges {
@@ -193,7 +197,25 @@ export function validateHankoOrganization(
     typeof details.membersAvailable !== "boolean"
   )
     throw new Error("Invalid member availability");
+  if (
+    details.editableFields !== undefined &&
+    (!Array.isArray(details.editableFields) ||
+      details.editableFields.length > 4 ||
+      new Set(details.editableFields).size !== details.editableFields.length ||
+      details.editableFields.some(
+        (field: unknown) =>
+          !["name", "description", "website", "email"].includes(
+            field as string,
+          ),
+      ))
+  )
+    throw new Error("Invalid editable organization fields");
   bounded(details.organization.name, 256);
+  if (details.organization.description !== undefined)
+    bounded(details.organization.description, 2000, true);
+  for (const field of ["website", "email"] as const)
+    if (details.organization[field] !== undefined)
+      bounded(details.organization[field], 320);
   const ids = new Set<string>();
   for (const member of details.members) {
     identifier(member.id);
@@ -216,11 +238,15 @@ export function identifier(value: unknown): asserts value is string {
 export function bounded(
   value: unknown,
   limit: number,
+  multiline = false,
 ): asserts value is string {
   if (
     typeof value !== "string" ||
     value.length > limit ||
-    /[\u0000-\u001f\u007f]/u.test(value)
+    (multiline
+      ? /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u
+      : /[\u0000-\u001f\u007f]/u
+    ).test(value)
   )
     throw new Error("Invalid identity field");
 }
