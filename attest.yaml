@@ -5,9 +5,7 @@ steps:
     run: |-
       set -eu
       npm ci
-      npm run lint
-      npm run test:coverage
-      npm run build
+      npm run check
       npm audit --audit-level=high
       npm pack --pack-destination artifacts
       node --version > artifacts/toolchain.txt
@@ -15,6 +13,8 @@ steps:
       - src/
       - testdata/
       - contracts/
+      - scripts/
+      - examples/
       - package.json
       - package-lock.json
       - tsconfig.json

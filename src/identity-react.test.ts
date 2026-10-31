@@ -2,7 +2,14 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createElement as h } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { HankoIdentityView, type HankoIdentityUI } from "./identity-react.js";
+import {
+  HankoIdentityView,
+  hankoIdentityMessages,
+  hankoIdentityLocales,
+  resolveHankoIdentityLocale,
+  hankoIdentityDirection,
+  type HankoIdentityUI,
+} from "./identity-react.js";
 import type { HankoIdentityController } from "./identity.js";
 
 const ui: HankoIdentityUI = {
@@ -85,6 +92,54 @@ test("cached native screens reject an account from another session", () => {
   assert.throws(() =>
     renderToStaticMarkup(
       h(HankoIdentityView, { ...props, subject: "bob", page: "profile" }),
+    ),
+  );
+});
+test("identity screens have complete messages for every supported locale", () => {
+  const keys = Object.keys(hankoIdentityMessages.en).sort();
+  for (const locale of hankoIdentityLocales) {
+    assert.deepEqual(Object.keys(hankoIdentityMessages[locale]).sort(), keys);
+    assert.ok(
+      Object.values(hankoIdentityMessages[locale]).every((value) =>
+        value.trim(),
+      ),
+    );
+    const profile = renderToStaticMarkup(
+      h(HankoIdentityView, { ...props, page: "profile", locale }),
+    );
+    assert.ok(profile.includes(hankoIdentityMessages[locale].profile));
+    assert.ok(profile.includes("Alice"));
+    const security = renderToStaticMarkup(
+      h(HankoIdentityView, {
+        ...props,
+        page: "security",
+        locale,
+        onAccountAction() {},
+      }),
+    );
+    assert.ok(security.includes(hankoIdentityMessages[locale].password));
+    assert.equal((security.match(/<button/gu) ?? []).length, 3);
+  }
+});
+test("regional language tags and RTL languages have deterministic fallbacks", () => {
+  for (const [input, expected] of [
+    ["fr-CA", "fr"],
+    ["de-DE", "de"],
+    ["pt", "pt-BR"],
+    ["he-IL", "he"],
+    ["iw", "he"],
+    ["ar-SA", "ar"],
+    ["unknown", "en"],
+    ["not_a_locale", "en"],
+  ]) {
+    assert.equal(resolveHankoIdentityLocale(input), expected);
+  }
+  assert.equal(hankoIdentityDirection("he-IL"), "rtl");
+  assert.equal(hankoIdentityDirection("ar"), "rtl");
+  assert.equal(hankoIdentityDirection("en"), "ltr");
+  assert.doesNotThrow(() =>
+    renderToStaticMarkup(
+      h(HankoIdentityView, { ...props, page: "profile", locale: "unknown" }),
     ),
   );
 });

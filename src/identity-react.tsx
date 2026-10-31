@@ -20,6 +20,17 @@ import {
   type HankoOrganizationDetails,
 } from "./identity.js";
 
+import {
+  additionalHankoIdentityMessages,
+  resolveHankoIdentityLocale,
+} from "./identity-languages.js";
+export {
+  hankoIdentityLocales,
+  resolveHankoIdentityLocale,
+  hankoIdentityDirection,
+  type HankoIdentityLocale,
+} from "./identity-languages.js";
+
 export type HankoAccountAction =
   "profile" | "password" | "email" | "otp" | "logout";
 export type HankoIdentityPage =
@@ -66,12 +77,13 @@ export interface HankoIdentityScreenProps {
   controller: HankoIdentityController;
   page: HankoIdentityPage;
   ui: HankoIdentityUI;
-  locale?: "en" | "fr";
+  locale?: string;
   title?: string;
   description?: string;
   onAccountAction?: (action: HankoAccountAction) => void | Promise<void>;
 }
 export const hankoIdentityMessages = {
+  ...additionalHankoIdentityMessages,
   en: {
     profile: "My profile",
     organizations: "Organizations",
@@ -239,7 +251,7 @@ export function HankoIdentityScreen(props: Readonly<HankoIdentityScreenProps>) {
 }
 function IdentityScreen(props: Readonly<HankoIdentityScreenProps>) {
   const account = useHankoAccount(props.subject, props.controller);
-  const t = hankoIdentityMessages[props.locale ?? "en"];
+  const t = hankoIdentityMessages[resolveHankoIdentityLocale(props.locale)];
   if (!account.data)
     return (
       <LoadState
@@ -265,7 +277,7 @@ export interface HankoIdentityViewProps extends HankoIdentityScreenProps {
 export function HankoIdentityView(props: Readonly<HankoIdentityViewProps>) {
   validateHankoAccount(props.account, props.subject);
   const { ui, page, title, description, account } = props;
-  const t = hankoIdentityMessages[props.locale ?? "en"];
+  const t = hankoIdentityMessages[resolveHankoIdentityLocale(props.locale)];
   return (
     <ui.Page title={title || t[page]} {...(description ? { description } : {})}>
       {page === "profile" && (
@@ -361,7 +373,7 @@ function AccountAction({
   action,
 }: HankoIdentityViewProps & { label: string; action: HankoAccountAction }) {
   const mutation = useHankoIdentityMutation();
-  const t = hankoIdentityMessages[locale];
+  const t = hankoIdentityMessages[resolveHankoIdentityLocale(locale)];
   return (
     <ui.Group>
       <ui.Button
@@ -384,7 +396,7 @@ function AccountAction({
 }
 function Organizations(props: HankoIdentityViewProps) {
   const { account, controller, ui, locale = "en" } = props;
-  const t = hankoIdentityMessages[locale];
+  const t = hankoIdentityMessages[resolveHankoIdentityLocale(locale)];
   const selector = useId();
   const [selection, select] = useState(account.organizations[0]?.id ?? "");
   const selected = account.organizations.some((org) => org.id === selection)
@@ -453,7 +465,7 @@ function Organizations(props: HankoIdentityViewProps) {
 }
 function Organization(props: HankoIdentityViewProps & { id: string }) {
   const { id, controller, ui, locale = "en" } = props;
-  const t = hankoIdentityMessages[locale];
+  const t = hankoIdentityMessages[resolveHankoIdentityLocale(locale)];
   const result = useHankoOrganization(id, controller);
   if (!result.data)
     return (
@@ -545,14 +557,15 @@ function Organization(props: HankoIdentityViewProps & { id: string }) {
                 ? {
                     renderActions: (
                       member: HankoOrganizationDetails["members"][number],
-                    ) => member.manageable === false ? null : (
-                      <MemberActions
-                        {...props}
-                        details={details}
-                        member={member}
-                        refresh={result.reload}
-                      />
-                    ),
+                    ) =>
+                      member.manageable === false ? null : (
+                        <MemberActions
+                          {...props}
+                          details={details}
+                          member={member}
+                          refresh={result.reload}
+                        />
+                      ),
                   }
                 : {})}
             />
@@ -599,7 +612,7 @@ function MemberActions({
   member: HankoOrganizationDetails["members"][number];
   refresh: () => void;
 }) {
-  const t = hankoIdentityMessages[locale];
+  const t = hankoIdentityMessages[resolveHankoIdentityLocale(locale)];
   const [confirm, setConfirm] = useState(false);
   const mutation = useHankoIdentityMutation();
   return (

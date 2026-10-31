@@ -1,7 +1,11 @@
 # HankoShell TypeScript ADK
 
 Application authentication, backend adapters and reusable account screens for HankoShell.
-Use Node 22 or 24. The first npm release is being prepared.
+Use Node 22 or 24. Install the public package from npm:
+
+```sh
+npm install @alien6-studio/hankoshell-typescript-adk
+```
 
 [![CI](https://github.com/Alien6-Studio/hankoshell-typescript-adk/actions/workflows/ci.yml/badge.svg)](https://github.com/Alien6-Studio/hankoshell-typescript-adk/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
@@ -21,8 +25,8 @@ Keep client secrets in your application’s secret mechanism and out of browser 
 
 ```ts
 import NextAuth from "next-auth";
-import { loadHankoClientConfig } from "@alien6/hankoshell-typescript-adk";
-import { createHankoAuthJsProvider } from "@alien6/hankoshell-typescript-adk/authjs";
+import { loadHankoClientConfig } from "@alien6-studio/hankoshell-typescript-adk";
+import { createHankoAuthJsProvider } from "@alien6-studio/hankoshell-typescript-adk/authjs";
 
 export const { handlers, auth } = NextAuth({
   providers: [createHankoAuthJsProvider(loadHankoClientConfig(process.env))],
@@ -41,8 +45,8 @@ import { Strategy } from "passport-jwt";
 import {
   loadHankoResourceServerConfig,
   createHankoPrincipal,
-} from "@alien6/hankoshell-typescript-adk";
-import { createHankoJwtStrategyOptions } from "@alien6/hankoshell-typescript-adk/passport";
+} from "@alien6-studio/hankoshell-typescript-adk";
+import { createHankoJwtStrategyOptions } from "@alien6-studio/hankoshell-typescript-adk/passport";
 
 const config = loadHankoResourceServerConfig(process.env);
 const strategy = new Strategy(
@@ -70,14 +74,21 @@ the application owns its Next.js routes, navigation and design system.
 `HankoIdentityScreen` from `/identity/react` accepts a required `ui` adapter for
 the application's buttons, fields, selects, cards and member lists. It injects
 no CSS, theme variables, navigation frame or iframe and needs only React.
-Bind your existing shadcn/ui components using [the reference adapter](examples/shadcn-ui.tsx),
+Bind your existing shadcn/ui components using [the reference adapter](https://github.com/Alien6-Studio/hankoshell-typescript-adk/blob/main/examples/shadcn-ui.tsx),
 or bind another design system through the same typed contract. No second copy
 of shadcn or Radix is installed by the ADK.
 
+Headless screens support `en`, `fr`, `es`, `de`, `it`, `pt-BR`, `ar` and `he`.
+Regional tags such as `fr-CA` and `he-IL` resolve to the supported language;
+unknown tags fall back to English. `/identity/react` exports
+`resolveHankoIdentityLocale`, `hankoIdentityLocales` and `hankoIdentityDirection`.
+Use the direction helper on the host's page container for Arabic and Hebrew.
+The older themed `/react` wrapper retains its English/French locale contract.
+
 ```tsx
 "use client";
-import { HankoIdentityScreen } from "@alien6/hankoshell-typescript-adk/identity/react";
-import { createHankoIdentityClient } from "@alien6/hankoshell-typescript-adk/identity";
+import { HankoIdentityScreen } from "@alien6-studio/hankoshell-typescript-adk/identity/react";
+import { createHankoIdentityClient } from "@alien6-studio/hankoshell-typescript-adk/identity";
 import { hankoIdentityUI } from "./hanko-identity-ui";
 
 const controller = createHankoIdentityClient({ endpoint: "/api/account" });
@@ -201,9 +212,18 @@ npm ci
 npm run check
 ```
 
-The package uses ESM and typed exports. Releases use `vX.Y.Z` tags matching
-`package.json`; npm publication requires control of the `@alien6` scope and its
-configured trusted publisher. Released versions are immutable.
+The package uses ESM and typed exports.
+
+`/identity/react` and `/react` are React client entry points: bundle them with
+your application's frontend. Node services use the root, `/authjs`, `/passport`,
+`/identity` and `/identity/server` entry points.
+
+Releases use `vX.Y.Z` tags matching
+`package.json`; the release workflow publishes the tested npm archive and signed qualification evidence
+on GitHub. The first npm publication uses that exact archive with maintainer 2FA.
+For subsequent automated publication, configure the package's npm trusted publisher
+for this repository and `release.yml`, then set `NPM_PUBLISH_ENABLED=true`.
+No npm token is stored in this repository. Released versions are immutable.
 
 The [Go ADK](https://github.com/Alien6-Studio/hankoshell-golang-adk) is maintained
 separately. Both ADKs carry the same synthetic access-token vectors in `testdata/`.
@@ -224,8 +244,9 @@ recomputes the evidence against the reviewed commit, signs it with Continuum
 Attest 0.2.0 and verifies signature, hashes and successful execution. Releases
 publish that exact package. The public signer is pinned in [.github/attest/trust](.github/attest/trust).
 
-To check a downloaded proof, check out its source revision and restore the
-`signed-attestation` artifact at the repository root, then run:
+To check a downloaded proof, check out its source revision and extract the
+release's `qualification-evidence.tar.gz` at the repository root (or restore the
+`signed-attestation` workflow artifact), then run:
 
 ```sh
 attest verify proof/receipt.yaml --recompute --require signature,recompute,success --trust-store .github/attest/trust --offline
