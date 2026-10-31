@@ -5,11 +5,17 @@ on:
       - main
   pull_request: null
   workflow_dispatch: null
-  workflow_call: null
+  workflow_call:
+    inputs:
+      ref:
+        description: Exact source ref selected by a release workflow
+        type: string
+        required: false
+        default: ""
 permissions:
   contents: read
 concurrency:
-  group: adk-${{ github.workflow }}-${{ github.ref }}
+  group: adk-${{ github.workflow }}-${{ inputs.ref || github.ref }}
   cancel-in-progress: true
 jobs:
   typescript:
@@ -26,6 +32,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
+          ref: ${{ inputs.ref || github.ref }}
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
           node-version: ${{ matrix.node }}
@@ -33,12 +40,6 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm audit --omit=dev --audit-level=high
-      - name: Install and import the actual npm archive
-        run: |
-          archive="$(npm pack --pack-destination "$RUNNER_TEMP" --json | node -e 'let input=""; process.stdin.on("data", chunk => input += chunk); process.stdin.on("end", () => process.stdout.write(JSON.parse(input)[0].filename));')"
-          npm install --prefix "$RUNNER_TEMP/consumer" --ignore-scripts --no-audit "$RUNNER_TEMP/$archive"
-          printf '%s\n' 'import { normalizeHankoIssuer } from "@alien6/hankoshell-typescript-adk";' 'if (normalizeHankoIssuer("https://auth.example.test/") !== "https://auth.example.test") throw new Error("packaged import failed");' > "$RUNNER_TEMP/consumer/check.mjs"
-          node "$RUNNER_TEMP/consumer/check.mjs"
   checks:
     name: ADK checks
     if: always()

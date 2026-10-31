@@ -1,5 +1,5 @@
 "use client";
-import type { HankoIdentityUI } from "@alien6/hankoshell-typescript-adk/identity/react";
+import type { HankoIdentityUI } from "@alien6-studio/hankoshell-typescript-adk/identity/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

@@ -4,12 +4,12 @@ import {
   ExperienceShell,
   useTheme,
   type ExperienceContext,
-} from "@alien6/hankoshell-keycloak-theme-builder/experience/react";
-import { ThemeProvider } from "@alien6/hankoshell-keycloak-theme-builder/react";
+} from "@alien6-studio/hankoshell-keycloak-theme-builder/experience/react";
+import { ThemeProvider } from "@alien6-studio/hankoshell-keycloak-theme-builder/react";
 import type {
   ThemeConfig,
   ColorMode,
-} from "@alien6/hankoshell-keycloak-theme-builder";
+} from "@alien6-studio/hankoshell-keycloak-theme-builder";
 import type {
   HankoAccountSummary,
   HankoIdentityController,
